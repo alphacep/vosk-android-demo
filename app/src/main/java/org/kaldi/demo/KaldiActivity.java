@@ -43,9 +43,14 @@ import android.widget.TextView;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.ref.WeakReference;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
 import org.kaldi.Assets;
+import org.kaldi.KaldiRecognizer;
+import org.kaldi.Model;
 import org.kaldi.SpeechRecognizer;
 import org.kaldi.RecognitionListener;
 
@@ -150,7 +155,25 @@ public class KaldiActivity extends Activity implements
         // The recognizer can be configured to perform multiple searches
         // of different kind and switch between them
 
-        recognizer = new SpeechRecognizer(assetsDir.toString() + "/model-libri");
+        Model model = new Model(assetsDir.toString() + "/model-libri");
+
+        KaldiRecognizer rec = new KaldiRecognizer(model);
+
+        InputStream ais = getAssets().open("10001-90210-01803.wav");
+        ais.skip(44);
+        byte[] b = new byte[4096];
+        int nbytes;
+        long startTime = System.currentTimeMillis();
+        while ((nbytes = ais.read(b)) >= 0) {
+            ByteBuffer bb = ByteBuffer.wrap(b, 0, nbytes);
+            bb.order(ByteOrder.LITTLE_ENDIAN);
+            short[] s = new short[nbytes/2];
+            bb.asShortBuffer().get(s);
+            rec.AcceptWaveform(s, nbytes);
+        }
+        Log.d("!!!!", "Result " + rec.FinalResult() + " elapsed "  + (System.currentTimeMillis() - startTime));
+
+        recognizer = new SpeechRecognizer(model);
         recognizer.addListener(this);
         recognizer.startListening();
     }
