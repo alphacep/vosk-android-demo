@@ -165,11 +165,7 @@ public class KaldiActivity extends Activity implements
         int nbytes;
         long startTime = System.currentTimeMillis();
         while ((nbytes = ais.read(b)) >= 0) {
-            ByteBuffer bb = ByteBuffer.wrap(b, 0, nbytes);
-            bb.order(ByteOrder.LITTLE_ENDIAN);
-            short[] s = new short[nbytes/2];
-            bb.asShortBuffer().get(s);
-            rec.AcceptWaveform(s, nbytes);
+            rec.AcceptWaveform(b, nbytes);
         }
         Log.d("!!!!", "Result " + rec.FinalResult() + " elapsed "  + (System.currentTimeMillis() - startTime));
 
