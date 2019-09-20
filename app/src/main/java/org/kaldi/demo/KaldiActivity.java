@@ -155,7 +155,7 @@ public class KaldiActivity extends Activity implements
         // The recognizer can be configured to perform multiple searches
         // of different kind and switch between them
 
-        Model model = new Model(assetsDir.toString() + "/model-libri");
+        Model model = new Model(assetsDir.toString() + "/model-android");
 
         KaldiRecognizer rec = new KaldiRecognizer(model);
 
