@@ -39,20 +39,20 @@ import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
+import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
+
+import org.kaldi.Assets;
+import org.kaldi.KaldiRecognizer;
+import org.kaldi.Model;
+import org.kaldi.RecognitionListener;
+import org.kaldi.SpeechRecognizer;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.ref.WeakReference;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-
-import org.kaldi.Assets;
-import org.kaldi.KaldiRecognizer;
-import org.kaldi.Model;
-import org.kaldi.SpeechRecognizer;
-import org.kaldi.RecognitionListener;
 
 public class KaldiActivity extends Activity implements
         RecognitionListener {
@@ -64,6 +64,7 @@ public class KaldiActivity extends Activity implements
     /* Used to handle permission request */
     private static final int PERMISSIONS_REQUEST_RECORD_AUDIO = 1;
 
+    private Model model;
     private SpeechRecognizer recognizer;
     TextView resultView;
 
@@ -71,8 +72,26 @@ public class KaldiActivity extends Activity implements
     public void onCreate(Bundle state) {
         super.onCreate(state);
         setContentView(R.layout.main);
-        resultView = ((TextView) findViewById(R.id.result_text));
-        resultView.setText("Preparing the recognizer");
+
+        // Setup layout
+        resultView = findViewById(R.id.result_text);
+        resultView.setText(R.string.preparing);
+
+        findViewById(R.id.recognize_file).setEnabled(false);
+        findViewById(R.id.recognize_file).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                recognizeFile();
+            }
+        });
+
+        findViewById(R.id.recognize_mic).setEnabled(false);
+        findViewById(R.id.recognize_mic).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                recognizeMicrophone();
+            }
+        });
 
         // Check if user has given permission to record audio
         int permissionCheck = ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.RECORD_AUDIO);
@@ -88,35 +107,40 @@ public class KaldiActivity extends Activity implements
     private static class SetupTask extends AsyncTask<Void, Void, Exception> {
         WeakReference<KaldiActivity> activityReference;
         WeakReference<TextView> resultView;
+
         SetupTask(KaldiActivity activity, TextView resultView) {
             this.activityReference = new WeakReference<>(activity);
-            this.resultView = new WeakReference<TextView>(resultView);
+            this.resultView = new WeakReference<>(resultView);
         }
+
         @Override
         protected Exception doInBackground(Void... params) {
             try {
                 Assets assets = new Assets(activityReference.get());
                 File assetDir = assets.syncAssets();
                 Log.d("!!!!", assetDir.toString());
-                activityReference.get().setupRecognizer(assetDir);
+                activityReference.get().model = new Model(assetDir.toString() + "/model-android");
             } catch (IOException e) {
                 return e;
             }
             return null;
         }
+
         @Override
         protected void onPostExecute(Exception result) {
             if (result != null) {
-                resultView.get().setText("Failed to init recognizer " + result);
+                resultView.get().setText(String.format(activityReference.get().getString(R.string.failed), result));
             } else {
-                resultView.get().setText("Start talking!\n");
+                resultView.get().setText(R.string.ready);
+                (activityReference.get().findViewById(R.id.recognize_file)).setEnabled(true);
+                (activityReference.get().findViewById(R.id.recognize_mic)).setEnabled(true);
             }
         }
     }
 
     @Override
     public void onRequestPermissionsResult(int requestCode,
-                                           @NonNull String[] permissions, @NonNull  int[] grantResults) {
+                                           @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
 
         if (requestCode == PERMISSIONS_REQUEST_RECORD_AUDIO) {
@@ -150,28 +174,69 @@ public class KaldiActivity extends Activity implements
         resultView.append(hypothesis + "\n");
     }
 
+    private static class RecognizeTask extends AsyncTask<Void, Void, String> {
+        WeakReference<KaldiActivity> activityReference;
+        WeakReference<TextView> resultView;
 
-    private void setupRecognizer(File assetsDir) throws IOException {
-        // The recognizer can be configured to perform multiple searches
-        // of different kind and switch between them
-
-        Model model = new Model(assetsDir.toString() + "/model-android");
-
-        KaldiRecognizer rec = new KaldiRecognizer(model);
-
-        InputStream ais = getAssets().open("10001-90210-01803.wav");
-        ais.skip(44);
-        byte[] b = new byte[4096];
-        int nbytes;
-        long startTime = System.currentTimeMillis();
-        while ((nbytes = ais.read(b)) >= 0) {
-            rec.AcceptWaveform(b, nbytes);
+        RecognizeTask(KaldiActivity activity, TextView resultView) {
+            this.activityReference = new WeakReference<>(activity);
+            this.resultView = new WeakReference<>(resultView);
         }
-        Log.d("!!!!", "Result " + rec.FinalResult() + " elapsed "  + (System.currentTimeMillis() - startTime));
 
-        recognizer = new SpeechRecognizer(model);
-        recognizer.addListener(this);
-        recognizer.startListening();
+        @Override
+        protected String doInBackground(Void... params) {
+            KaldiRecognizer rec;
+            long startTime = System.currentTimeMillis();
+            try {
+                rec = new KaldiRecognizer(activityReference.get().model);
+
+                InputStream ais = activityReference.get().getAssets().open("10001-90210-01803.wav");
+                if (ais.skip(44) != 44) {
+                    return "";
+                }
+                byte[] b = new byte[4096];
+                int nbytes;
+                while ((nbytes = ais.read(b)) >= 0) {
+                    rec.AcceptWaveform(b, nbytes);
+                }
+            } catch (IOException e) {
+                return "";
+            }
+            return String.format(activityReference.get().getString(R.string.elapsed), rec.FinalResult(), (System.currentTimeMillis() - startTime));
+        }
+
+        @Override
+        protected void onPostExecute(String result) {
+            resultView.get().append(result + "\n");
+            activityReference.get().findViewById(R.id.recognize_mic).setEnabled(true);
+            activityReference.get().findViewById(R.id.recognize_mic).setEnabled(true);
+        }
+    }
+
+
+    public void recognizeFile() {
+        findViewById(R.id.recognize_mic).setEnabled(false);
+        findViewById(R.id.recognize_file).setEnabled(false);
+        new RecognizeTask(this, resultView).execute();
+    }
+
+    public void recognizeMicrophone() {
+        if (recognizer != null) {
+            recognizer.cancel();
+            ((Button) findViewById(R.id.recognize_mic)).setText(R.string.recognize_microphone);
+            findViewById(R.id.recognize_file).setEnabled(true);
+            recognizer = null;
+        } else {
+            ((Button) findViewById(R.id.recognize_mic)).setText(R.string.stop_microphone);
+            findViewById(R.id.recognize_file).setEnabled(false);
+            try {
+                recognizer = new SpeechRecognizer(model);
+                recognizer.addListener(this);
+                recognizer.startListening();
+            } catch (IOException e) {
+                // nothing
+            }
+        }
     }
 
     @Override

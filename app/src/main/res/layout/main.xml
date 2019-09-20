@@ -4,6 +4,16 @@
     android:layout_height="fill_parent"
     android:orientation="vertical"
     android:padding="16dp">
+    <Button
+        android:id="@+id/recognize_file"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/recognize_file"/>
+    <Button
+        android:id="@+id/recognize_mic"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/recognize_microphone"/>
     <TextView
         android:id="@+id/result_text"
         android:layout_width="fill_parent"

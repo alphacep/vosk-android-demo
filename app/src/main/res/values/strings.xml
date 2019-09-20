@@ -2,5 +2,12 @@
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
 
     <string name="app_name">Kaldi Demo</string>
+    <string name="recognize_file">Recognize File</string>
+    <string name="recognize_microphone">Recognize Microphone</string>
+    <string name="stop_microphone">Stop Microphone</string>
+    <string name="preparing">Preparing the recognizer</string>
+    <string name="ready">Ready</string>
+    <string name="failed">Failed to init recognizer %s</string>
+    <string name="elapsed">Result %s elapsed %d</string>
 
 </resources>
