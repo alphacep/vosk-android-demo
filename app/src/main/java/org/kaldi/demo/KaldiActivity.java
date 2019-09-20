@@ -138,42 +138,6 @@ public class KaldiActivity extends Activity implements
         }
     }
 
-    @Override
-    public void onRequestPermissionsResult(int requestCode,
-                                           @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-
-        if (requestCode == PERMISSIONS_REQUEST_RECORD_AUDIO) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                // Recognizer initialization is a time-consuming and it involves IO,
-                // so we execute it in async task
-                new SetupTask(this, resultView).execute();
-            } else {
-                finish();
-            }
-        }
-    }
-
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-
-        if (recognizer != null) {
-            recognizer.cancel();
-            recognizer.shutdown();
-        }
-    }
-
-    @Override
-    public void onResult(String hypothesis) {
-        resultView.append(hypothesis + "\n");
-    }
-
-    @Override
-    public void onPartialResult(String hypothesis) {
-        resultView.append(hypothesis + "\n");
-    }
-
     private static class RecognizeTask extends AsyncTask<Void, Void, String> {
         WeakReference<KaldiActivity> activityReference;
         WeakReference<TextView> resultView;
@@ -213,6 +177,53 @@ public class KaldiActivity extends Activity implements
         }
     }
 
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
+        if (requestCode == PERMISSIONS_REQUEST_RECORD_AUDIO) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                // Recognizer initialization is a time-consuming and it involves IO,
+                // so we execute it in async task
+                new SetupTask(this, resultView).execute();
+            } else {
+                finish();
+            }
+        }
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+
+        if (recognizer != null) {
+            recognizer.cancel();
+            recognizer.shutdown();
+        }
+    }
+
+    @Override
+    public void onResult(String hypothesis) {
+        resultView.append(hypothesis + "\n");
+    }
+
+    @Override
+    public void onPartialResult(String hypothesis) {
+        resultView.append(hypothesis + "\n");
+    }
+
+
+    @Override
+    public void onError(Exception error) {
+        Log.d("!!!!", "On error");
+    }
+
+    @Override
+    public void onTimeout() {
+        Log.d("!!!!", "On timeout");
+    }
+
 
     public void recognizeFile() {
         findViewById(R.id.recognize_mic).setEnabled(false);
@@ -239,13 +250,4 @@ public class KaldiActivity extends Activity implements
         }
     }
 
-    @Override
-    public void onError(Exception error) {
-        Log.d("!!!!", "On error");
-    }
-
-    @Override
-    public void onTimeout() {
-        Log.d("!!!!", "On timeout");
-    }
 }
