@@ -1,30 +1,5 @@
 /* ====================================================================
  * Copyright (c) 2019 Alpha Cephei Inc.  All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY ALPHA CEPHEI INC. ``AS IS'' AND
- * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL CARNEGIE MELLON UNIVERSITY
- * NOR ITS EMPLOYEES BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
  * ====================================================================
  */
 
@@ -61,6 +36,11 @@ public class KaldiActivity extends Activity implements
         System.loadLibrary("kaldi_jni");
     }
 
+    static private final int STATE_START = 0;
+    static private final int STATE_READY = 1;
+    static private final int STATE_FILE = 2;
+    static private final int STATE_MIC  = 3;
+
     /* Used to handle permission request */
     private static final int PERMISSIONS_REQUEST_RECORD_AUDIO = 1;
 
@@ -75,9 +55,8 @@ public class KaldiActivity extends Activity implements
 
         // Setup layout
         resultView = findViewById(R.id.result_text);
-        resultView.setText(R.string.preparing);
+        setUiState(STATE_START);
 
-        findViewById(R.id.recognize_file).setEnabled(false);
         findViewById(R.id.recognize_file).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -85,7 +64,6 @@ public class KaldiActivity extends Activity implements
             }
         });
 
-        findViewById(R.id.recognize_mic).setEnabled(false);
         findViewById(R.id.recognize_mic).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -101,16 +79,14 @@ public class KaldiActivity extends Activity implements
         }
         // Recognizer initialization is a time-consuming and it involves IO,
         // so we execute it in async task
-        new SetupTask(this, resultView).execute();
+        new SetupTask(this).execute();
     }
 
     private static class SetupTask extends AsyncTask<Void, Void, Exception> {
         WeakReference<KaldiActivity> activityReference;
-        WeakReference<TextView> resultView;
 
-        SetupTask(KaldiActivity activity, TextView resultView) {
+        SetupTask(KaldiActivity activity) {
             this.activityReference = new WeakReference<>(activity);
-            this.resultView = new WeakReference<>(resultView);
         }
 
         @Override
@@ -129,11 +105,9 @@ public class KaldiActivity extends Activity implements
         @Override
         protected void onPostExecute(Exception result) {
             if (result != null) {
-                resultView.get().setText(String.format(activityReference.get().getString(R.string.failed), result));
+                activityReference.get().setErrorState(String.format(activityReference.get().getString(R.string.failed), result));
             } else {
-                resultView.get().setText(R.string.ready);
-                (activityReference.get().findViewById(R.id.recognize_file)).setEnabled(true);
-                (activityReference.get().findViewById(R.id.recognize_mic)).setEnabled(true);
+                activityReference.get().setUiState(STATE_READY);
             }
         }
     }
@@ -171,9 +145,8 @@ public class KaldiActivity extends Activity implements
 
         @Override
         protected void onPostExecute(String result) {
+            activityReference.get().setUiState(STATE_READY);
             resultView.get().append(result + "\n");
-            activityReference.get().findViewById(R.id.recognize_mic).setEnabled(true);
-            activityReference.get().findViewById(R.id.recognize_mic).setEnabled(true);
         }
     }
 
@@ -186,7 +159,7 @@ public class KaldiActivity extends Activity implements
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 // Recognizer initialization is a time-consuming and it involves IO,
                 // so we execute it in async task
-                new SetupTask(this, resultView).execute();
+                new SetupTask(this).execute();
             } else {
                 finish();
             }
@@ -203,6 +176,7 @@ public class KaldiActivity extends Activity implements
         }
     }
 
+
     @Override
     public void onResult(String hypothesis) {
         resultView.append(hypothesis + "\n");
@@ -213,39 +187,69 @@ public class KaldiActivity extends Activity implements
         resultView.append(hypothesis + "\n");
     }
 
-
     @Override
-    public void onError(Exception error) {
-        Log.d("!!!!", "On error");
+    public void onError(Exception e) {
+        setErrorState(e.getMessage());
     }
 
     @Override
     public void onTimeout() {
-        Log.d("!!!!", "On timeout");
+        recognizer.cancel();
+        recognizer = null;
+        setUiState(STATE_READY);
     }
 
+    private void setUiState(int state) {
+        switch (state) {
+            case STATE_START:
+                resultView.setText(R.string.preparing);
+                findViewById(R.id.recognize_file).setEnabled(false);
+                findViewById(R.id.recognize_mic).setEnabled(false);
+                break;
+            case STATE_READY:
+                resultView.setText(R.string.ready);
+                ((Button) findViewById(R.id.recognize_mic)).setText(R.string.recognize_microphone);
+                findViewById(R.id.recognize_file).setEnabled(true);
+                findViewById(R.id.recognize_mic).setEnabled(true);
+                break;
+            case STATE_FILE:
+                resultView.append(getString(R.string.starting));
+                findViewById(R.id.recognize_mic).setEnabled(false);
+                findViewById(R.id.recognize_file).setEnabled(false);
+                break;
+            case STATE_MIC:
+                ((Button) findViewById(R.id.recognize_mic)).setText(R.string.stop_microphone);
+                findViewById(R.id.recognize_file).setEnabled(false);
+                findViewById(R.id.recognize_mic).setEnabled(true);
+                break;
+        }
+    }
+
+    private void setErrorState(String message) {
+        resultView.setText(message);
+        ((Button) findViewById(R.id.recognize_mic)).setText(R.string.recognize_microphone);
+        findViewById(R.id.recognize_file).setEnabled(false);
+        findViewById(R.id.recognize_mic).setEnabled(false);
+    }
 
     public void recognizeFile() {
-        findViewById(R.id.recognize_mic).setEnabled(false);
-        findViewById(R.id.recognize_file).setEnabled(false);
+        setUiState(STATE_FILE);
         new RecognizeTask(this, resultView).execute();
     }
 
     public void recognizeMicrophone() {
         if (recognizer != null) {
+            setUiState(STATE_READY);
             recognizer.cancel();
-            ((Button) findViewById(R.id.recognize_mic)).setText(R.string.recognize_microphone);
-            findViewById(R.id.recognize_file).setEnabled(true);
             recognizer = null;
         } else {
-            ((Button) findViewById(R.id.recognize_mic)).setText(R.string.stop_microphone);
-            findViewById(R.id.recognize_file).setEnabled(false);
+            setUiState(STATE_MIC);
             try {
                 recognizer = new SpeechRecognizer(model);
                 recognizer.addListener(this);
                 recognizer.startListening();
             } catch (IOException e) {
-                // nothing
+                setErrorState(e.getMessage());
             }
         }
     }

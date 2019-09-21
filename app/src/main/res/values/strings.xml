@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+<resources>
 
     <string name="app_name">Kaldi Demo</string>
     <string name="recognize_file">Recognize File</string>
     <string name="recognize_microphone">Recognize Microphone</string>
     <string name="stop_microphone">Stop Microphone</string>
-    <string name="preparing">Preparing the recognizer</string>
-    <string name="ready">Ready</string>
-    <string name="failed">Failed to init recognizer %s</string>
-    <string name="elapsed">Result %s elapsed %d</string>
+    <string name="preparing">Preparing the recognizer\n</string>
+    <string name="ready">Ready\n</string>
+    <string name="failed">Failed to init recognizer %s\n</string>
+    <string name="elapsed">Result %s elapsed %d milliseconds\n</string>
+    <string name="starting">Starting\n</string>
 
 </resources>
