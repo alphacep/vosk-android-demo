@@ -11,5 +11,12 @@ to dependencies, update the model and modify java UI code accodring to your need
 
 ## Development
 
-This is just a demo project, the main setup to compile kaldi-android library AAR is avialalbe at 
-http://github.com/alphacep/kaldi-android. Check compilation instructions there as well as development plans.
+This is just a demo project, the main setup to compile kaldi-android
+library AAR is available at [kaldi-android](http://github.com/alphacep/kaldi-android). Check
+compilation instructions there as well as development plans.
+
+## Languages
+
+Models for different languages (English, Chinese, Russian) are available in
+[Releases](https://github.com/alphacep/kaldi-android-demo/releases) section. To use the model unpack it into
+```kaldi-android-demo/models/src/main/assets/sync/model-android```. More languages gonna be ready soon.
