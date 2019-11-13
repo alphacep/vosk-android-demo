@@ -1,11 +1,15 @@
 apply plugin: 'com.android.application'
 
+repositories {
+    google()
+}
+
 android {
-    compileSdkVersion 26
+    compileSdkVersion 29
     defaultConfig {
         applicationId "org.kaldi.demo"
         minSdkVersion 21
-        targetSdkVersion 26
+        targetSdkVersion 29
         versionCode 1
         versionName "1.1"
     }
@@ -14,5 +18,5 @@ android {
 dependencies {
     implementation project(':aars')
     implementation project(':models')
-    implementation 'com.android.support:appcompat-v7:26.1.0'
+    implementation 'androidx.appcompat:appcompat:1.1.0'
 }
