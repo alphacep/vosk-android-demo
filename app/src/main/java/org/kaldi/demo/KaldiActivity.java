@@ -125,8 +125,9 @@ public class KaldiActivity extends Activity implements
         protected String doInBackground(Void... params) {
             KaldiRecognizer rec;
             long startTime = System.currentTimeMillis();
+            StringBuilder result = new StringBuilder();
             try {
-                rec = new KaldiRecognizer(activityReference.get().model);
+                rec = new KaldiRecognizer(activityReference.get().model, 16000.f);
 
                 InputStream ais = activityReference.get().getAssets().open("10001-90210-01803.wav");
                 if (ais.skip(44) != 44) {
@@ -135,12 +136,17 @@ public class KaldiActivity extends Activity implements
                 byte[] b = new byte[4096];
                 int nbytes;
                 while ((nbytes = ais.read(b)) >= 0) {
-                    rec.AcceptWaveform(b, nbytes);
+                    if (rec.AcceptWaveform(b, nbytes)) {
+                        result.append(rec.Result());
+                    } else {
+                        result.append(rec.PartialResult());
+                    }
                 }
+                result.append(rec.FinalResult());
             } catch (IOException e) {
                 return "";
             }
-            return String.format(activityReference.get().getString(R.string.elapsed), rec.FinalResult(), (System.currentTimeMillis() - startTime));
+            return String.format(activityReference.get().getString(R.string.elapsed), result.toString(), (System.currentTimeMillis() - startTime));
         }
 
         @Override
