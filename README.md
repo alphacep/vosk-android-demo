@@ -20,3 +20,7 @@ compilation instructions there as well as development plans.
 Models for different languages (English, Chinese, Russian) are available in
 [Releases](https://github.com/alphacep/kaldi-android-demo/releases) section. To use the model unpack it into
 ```kaldi-android-demo/models/src/main/assets/sync/model-android```. More languages gonna be ready soon.
+
+## Updating grammar and language model
+
+To run on android model has to be sufficiently small, we recommend to check model sizes in the demo to figure out what should be the size of the model. If you want to update the grammar or the acoustic model, check the script `mkgraph_lookahead_arpa.sh` from lookahead branch at [our kaldi fork](https://github.com/alphacep/kaldi) or from submitted [pull request](https://github.com/kaldi-asr/kaldi/pull/3616). Hopefully that pull request will be merged soon and graph can be compiled with kaldi master.
