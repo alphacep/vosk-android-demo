@@ -12,7 +12,7 @@ to dependencies, update the model and modify java UI code accodring to your need
 ## Development
 
 This is just a demo project, the main setup to compile kaldi-android
-library AAR is available at [kaldi-android](http://github.com/alphacep/kaldi-android). Check
+library AAR is available at [vosk-api](http://github.com/alphacep/vosk-api). Check
 compilation instructions there as well as development plans.
 
 ## Languages
