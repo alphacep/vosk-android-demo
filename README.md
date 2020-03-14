@@ -23,4 +23,4 @@ Models for different languages (English, Chinese, Russian) are available in
 
 ## Updating grammar and language model
 
-To run on android model has to be sufficiently small, we recommend to check model sizes in the demo to figure out what should be the size of the model. If you want to update the grammar or the acoustic model, check the script `mkgraph_lookahead_arpa.sh` from lookahead branch at [our kaldi fork](https://github.com/alphacep/kaldi) or from submitted [pull request](https://github.com/kaldi-asr/kaldi/pull/3616). Hopefully that pull request will be merged soon and graph can be compiled with kaldi master.
+To run on android model has to be sufficiently small, we recommend to check model sizes in the demo to figure out what should be the size of the model. If you want to update the grammar or the acoustic model, check [vosk-api documentation](https://github.com/alphacep/vosk-api/blob/master/doc/model.md).
