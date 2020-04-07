@@ -23,4 +23,4 @@ Models for different languages (English, Chinese, Russian) are available in
 
 ## Updating grammar and language model
 
-To run on android model has to be sufficiently small, we recommend to check model sizes in the demo to figure out what should be the size of the model. If you want to update the grammar or the acoustic model, check [vosk-api documentation](https://github.com/alphacep/vosk-api/blob/master/doc/model.md).
+To run on android model has to be sufficiently small, we recommend to check model sizes in the demo to figure out what should be the size of the model. If you want to update the grammar or the acoustic model, check [vosk-api documentation](https://github.com/alphacep/vosk-api/blob/master/doc/models.md).
