@@ -53,6 +53,12 @@ public class KaldiActivity extends Activity implements
     /* Used to handle permission request */
     private static final int PERMISSIONS_REQUEST_RECORD_AUDIO = 1;
 
+
+    // !!! warning !!!
+    // Model is used in a native implementation,
+    // it should be left as a class member or it will be garbage collected
+    // see https://github.com/alphacep/kaldi-android-demo/issues/45
+    @SuppressWarnings("FieldCanBeLocal")
     private Model model;
     private SpeechRecognizer recognizer;
     TextView resultView;
