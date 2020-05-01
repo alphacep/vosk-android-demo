@@ -32,6 +32,7 @@ import org.kaldi.KaldiRecognizer;
 import org.kaldi.Model;
 import org.kaldi.RecognitionListener;
 import org.kaldi.SpeechRecognizer;
+import org.kaldi.Vosk;
 
 import java.io.File;
 import java.io.IOException;
@@ -54,11 +55,6 @@ public class KaldiActivity extends Activity implements
     private static final int PERMISSIONS_REQUEST_RECORD_AUDIO = 1;
 
 
-    // !!! warning !!!
-    // Model is used in a native implementation,
-    // it should be left as a class member or it will be garbage collected
-    // see https://github.com/alphacep/kaldi-android-demo/issues/45
-    @SuppressWarnings("FieldCanBeLocal")
     private Model model;
     private SpeechRecognizer recognizer;
     TextView resultView;
@@ -109,7 +105,10 @@ public class KaldiActivity extends Activity implements
             try {
                 Assets assets = new Assets(activityReference.get());
                 File assetDir = assets.syncAssets();
-                Log.d("!!!!", assetDir.toString());
+                Log.d("KaldiDemo", "Sync files in the folder " + assetDir.toString());
+
+                Vosk.SetLogLevel(0);
+
                 activityReference.get().model = new Model(assetDir.toString() + "/model-android");
             } catch (IOException e) {
                 return e;
