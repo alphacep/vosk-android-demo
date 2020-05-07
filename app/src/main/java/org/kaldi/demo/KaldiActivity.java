@@ -22,6 +22,8 @@ import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+
+import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -48,8 +50,9 @@ public class KaldiActivity extends Activity implements
 
     static private final int STATE_START = 0;
     static private final int STATE_READY = 1;
-    static private final int STATE_FILE = 2;
-    static private final int STATE_MIC  = 3;
+    static private final int STATE_DONE = 2;
+    static private final int STATE_FILE = 3;
+    static private final int STATE_MIC  = 4;
 
     /* Used to handle permission request */
     private static final int PERMISSIONS_REQUEST_RECORD_AUDIO = 1;
@@ -141,7 +144,7 @@ public class KaldiActivity extends Activity implements
             long startTime = System.currentTimeMillis();
             StringBuilder result = new StringBuilder();
             try {
-                rec = new KaldiRecognizer(activityReference.get().model, 16000.f);
+                rec = new KaldiRecognizer(activityReference.get().model, 16000.f, "oh zero one two three four five six seven eight nine");
 
                 InputStream ais = activityReference.get().getAssets().open("10001-90210-01803.wav");
                 if (ais.skip(44) != 44) {
@@ -223,6 +226,7 @@ public class KaldiActivity extends Activity implements
         switch (state) {
             case STATE_START:
                 resultView.setText(R.string.preparing);
+                resultView.setMovementMethod(new ScrollingMovementMethod());
                 findViewById(R.id.recognize_file).setEnabled(false);
                 findViewById(R.id.recognize_mic).setEnabled(false);
                 break;
@@ -232,13 +236,19 @@ public class KaldiActivity extends Activity implements
                 findViewById(R.id.recognize_file).setEnabled(true);
                 findViewById(R.id.recognize_mic).setEnabled(true);
                 break;
+            case STATE_DONE:
+                ((Button) findViewById(R.id.recognize_mic)).setText(R.string.recognize_microphone);
+                findViewById(R.id.recognize_file).setEnabled(true);
+                findViewById(R.id.recognize_mic).setEnabled(true);
+                break;
             case STATE_FILE:
-                resultView.append(getString(R.string.starting));
+                resultView.setText(getString(R.string.starting));
                 findViewById(R.id.recognize_mic).setEnabled(false);
                 findViewById(R.id.recognize_file).setEnabled(false);
                 break;
             case STATE_MIC:
                 ((Button) findViewById(R.id.recognize_mic)).setText(R.string.stop_microphone);
+                resultView.setText(getString(R.string.say_something));
                 findViewById(R.id.recognize_file).setEnabled(false);
                 findViewById(R.id.recognize_mic).setEnabled(true);
                 break;
@@ -259,7 +269,7 @@ public class KaldiActivity extends Activity implements
 
     public void recognizeMicrophone() {
         if (recognizer != null) {
-            setUiState(STATE_READY);
+            setUiState(STATE_DONE);
             recognizer.cancel();
             recognizer = null;
         } else {
