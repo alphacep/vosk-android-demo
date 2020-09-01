@@ -44,10 +44,6 @@ import java.lang.ref.WeakReference;
 public class KaldiActivity extends Activity implements
         RecognitionListener {
 
-    static {
-        System.loadLibrary("kaldi_jni");
-    }
-
     static private final int STATE_START = 0;
     static private final int STATE_READY = 1;
     static private final int STATE_DONE = 2;
