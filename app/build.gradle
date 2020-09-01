@@ -2,12 +2,15 @@ apply plugin: 'com.android.application'
 
 repositories {
     google()
+    maven {
+        url  "https://dl.bintray.com/alphacep/vosk"
+    }
 }
 
 android {
     compileSdkVersion 29
     defaultConfig {
-        applicationId "org.kaldi.demo"
+        applicationId "org.vosk.demo"
         minSdkVersion 21
         targetSdkVersion 29
         versionCode 1
@@ -16,7 +19,8 @@ android {
 }
 
 dependencies {
-    implementation project(':aars')
-    implementation project(':models')
+    implementation 'com.alphacep:vosk-android:0.3.10'
     implementation 'androidx.appcompat:appcompat:1.1.0'
+
+    implementation project(':models')
 }

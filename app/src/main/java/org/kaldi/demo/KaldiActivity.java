@@ -33,7 +33,7 @@ import org.kaldi.Assets;
 import org.kaldi.KaldiRecognizer;
 import org.kaldi.Model;
 import org.kaldi.RecognitionListener;
-import org.kaldi.SpeechRecognizer;
+import org.kaldi.SpeechService;
 import org.kaldi.Vosk;
 
 import java.io.File;
@@ -59,7 +59,7 @@ public class KaldiActivity extends Activity implements
 
 
     private Model model;
-    private SpeechRecognizer recognizer;
+    private SpeechService speechService;
     TextView resultView;
 
     @Override
@@ -193,9 +193,9 @@ public class KaldiActivity extends Activity implements
     public void onDestroy() {
         super.onDestroy();
 
-        if (recognizer != null) {
-            recognizer.cancel();
-            recognizer.shutdown();
+        if (speechService != null) {
+            speechService.cancel();
+            speechService.shutdown();
         }
     }
 
@@ -217,8 +217,8 @@ public class KaldiActivity extends Activity implements
 
     @Override
     public void onTimeout() {
-        recognizer.cancel();
-        recognizer = null;
+        speechService.cancel();
+        speechService = null;
         setUiState(STATE_READY);
     }
 
@@ -268,16 +268,17 @@ public class KaldiActivity extends Activity implements
     }
 
     public void recognizeMicrophone() {
-        if (recognizer != null) {
+        if (speechService != null) {
             setUiState(STATE_DONE);
-            recognizer.cancel();
-            recognizer = null;
+            speechService.cancel();
+            speechService = null;
         } else {
             setUiState(STATE_MIC);
             try {
-                recognizer = new SpeechRecognizer(model);
-                recognizer.addListener(this);
-                recognizer.startListening();
+                KaldiRecognizer rec = new KaldiRecognizer(model, 16000.0f);
+                speechService = new SpeechService(rec, 16000.0f);
+                speechService.addListener(this);
+                speechService.startListening();
             } catch (IOException e) {
                 setErrorState(e.getMessage());
             }
