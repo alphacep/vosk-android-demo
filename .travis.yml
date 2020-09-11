@@ -18,8 +18,4 @@ android:
     # The SDK version used to compile your project
     - android-29
 
-
-before_script:
-  - yes | sdkmanager --licenses
-
 script: ./gradlew build
