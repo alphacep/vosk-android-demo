@@ -22,6 +22,8 @@ import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+
+import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -31,7 +33,8 @@ import org.kaldi.Assets;
 import org.kaldi.KaldiRecognizer;
 import org.kaldi.Model;
 import org.kaldi.RecognitionListener;
-import org.kaldi.SpeechRecognizer;
+import org.kaldi.SpeechService;
+import org.kaldi.Vosk;
 
 import java.io.File;
 import java.io.IOException;
@@ -41,20 +44,18 @@ import java.lang.ref.WeakReference;
 public class KaldiActivity extends Activity implements
         RecognitionListener {
 
-    static {
-        System.loadLibrary("kaldi_jni");
-    }
-
     static private final int STATE_START = 0;
     static private final int STATE_READY = 1;
-    static private final int STATE_FILE = 2;
-    static private final int STATE_MIC  = 3;
+    static private final int STATE_DONE = 2;
+    static private final int STATE_FILE = 3;
+    static private final int STATE_MIC  = 4;
 
     /* Used to handle permission request */
     private static final int PERMISSIONS_REQUEST_RECORD_AUDIO = 1;
 
+
     private Model model;
-    private SpeechRecognizer recognizer;
+    private SpeechService speechService;
     TextView resultView;
 
     @Override
@@ -103,7 +104,10 @@ public class KaldiActivity extends Activity implements
             try {
                 Assets assets = new Assets(activityReference.get());
                 File assetDir = assets.syncAssets();
-                Log.d("!!!!", assetDir.toString());
+                Log.d("KaldiDemo", "Sync files in the folder " + assetDir.toString());
+
+                Vosk.SetLogLevel(0);
+
                 activityReference.get().model = new Model(assetDir.toString() + "/model-android");
             } catch (IOException e) {
                 return e;
@@ -136,7 +140,7 @@ public class KaldiActivity extends Activity implements
             long startTime = System.currentTimeMillis();
             StringBuilder result = new StringBuilder();
             try {
-                rec = new KaldiRecognizer(activityReference.get().model, 16000.f);
+                rec = new KaldiRecognizer(activityReference.get().model, 16000.f, "oh zero one two three four five six seven eight nine");
 
                 InputStream ais = activityReference.get().getAssets().open("10001-90210-01803.wav");
                 if (ais.skip(44) != 44) {
@@ -185,9 +189,9 @@ public class KaldiActivity extends Activity implements
     public void onDestroy() {
         super.onDestroy();
 
-        if (recognizer != null) {
-            recognizer.cancel();
-            recognizer.shutdown();
+        if (speechService != null) {
+            speechService.cancel();
+            speechService.shutdown();
         }
     }
 
@@ -209,8 +213,8 @@ public class KaldiActivity extends Activity implements
 
     @Override
     public void onTimeout() {
-        recognizer.cancel();
-        recognizer = null;
+        speechService.cancel();
+        speechService = null;
         setUiState(STATE_READY);
     }
 
@@ -218,6 +222,7 @@ public class KaldiActivity extends Activity implements
         switch (state) {
             case STATE_START:
                 resultView.setText(R.string.preparing);
+                resultView.setMovementMethod(new ScrollingMovementMethod());
                 findViewById(R.id.recognize_file).setEnabled(false);
                 findViewById(R.id.recognize_mic).setEnabled(false);
                 break;
@@ -227,13 +232,19 @@ public class KaldiActivity extends Activity implements
                 findViewById(R.id.recognize_file).setEnabled(true);
                 findViewById(R.id.recognize_mic).setEnabled(true);
                 break;
+            case STATE_DONE:
+                ((Button) findViewById(R.id.recognize_mic)).setText(R.string.recognize_microphone);
+                findViewById(R.id.recognize_file).setEnabled(true);
+                findViewById(R.id.recognize_mic).setEnabled(true);
+                break;
             case STATE_FILE:
-                resultView.append(getString(R.string.starting));
+                resultView.setText(getString(R.string.starting));
                 findViewById(R.id.recognize_mic).setEnabled(false);
                 findViewById(R.id.recognize_file).setEnabled(false);
                 break;
             case STATE_MIC:
                 ((Button) findViewById(R.id.recognize_mic)).setText(R.string.stop_microphone);
+                resultView.setText(getString(R.string.say_something));
                 findViewById(R.id.recognize_file).setEnabled(false);
                 findViewById(R.id.recognize_mic).setEnabled(true);
                 break;
@@ -253,16 +264,17 @@ public class KaldiActivity extends Activity implements
     }
 
     public void recognizeMicrophone() {
-        if (recognizer != null) {
-            setUiState(STATE_READY);
-            recognizer.cancel();
-            recognizer = null;
+        if (speechService != null) {
+            setUiState(STATE_DONE);
+            speechService.cancel();
+            speechService = null;
         } else {
             setUiState(STATE_MIC);
             try {
-                recognizer = new SpeechRecognizer(model);
-                recognizer.addListener(this);
-                recognizer.startListening();
+                KaldiRecognizer rec = new KaldiRecognizer(model, 16000.0f);
+                speechService = new SpeechService(rec, 16000.0f);
+                speechService.addListener(this);
+                speechService.startListening();
             } catch (IOException e) {
                 setErrorState(e.getMessage());
             }
