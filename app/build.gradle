@@ -22,7 +22,7 @@ android {
 }
 
 dependencies {
-    implementation 'com.alphacep:vosk-android:0.3.10'
+    implementation 'com.alphacep:vosk-android:0.3.12'
     implementation 'androidx.appcompat:appcompat:1.1.0'
 
     implementation project(':models')
