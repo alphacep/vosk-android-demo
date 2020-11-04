@@ -3,7 +3,6 @@
 /local.properties
 /build
 /app/build
-/models/build
 .DS_Store
 *.md5
 *.lst
