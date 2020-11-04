@@ -19,11 +19,16 @@ android {
             abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86_64', 'x86'
         }
     }
+    buildTypes {
+        release {
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
 }
 
 dependencies {
-    implementation 'com.alphacep:vosk-android:0.3.12'
+    implementation 'com.alphacep:vosk-android:0.3.+'
     implementation 'androidx.appcompat:appcompat:1.1.0'
-
     implementation project(':models')
 }
