@@ -140,7 +140,7 @@ public class KaldiActivity extends Activity implements
             long startTime = System.currentTimeMillis();
             StringBuilder result = new StringBuilder();
             try {
-                rec = new KaldiRecognizer(activityReference.get().model, 16000.f, "oh zero one two three four five six seven eight nine");
+                rec = new KaldiRecognizer(activityReference.get().model, 16000.f, "[\"oh zero one two three four five six seven eight nine\"]");
 
                 InputStream ais = activityReference.get().getAssets().open("10001-90210-01803.wav");
                 if (ais.skip(44) != 44) {
