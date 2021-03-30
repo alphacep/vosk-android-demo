@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package org.kaldi.demo;
+package org.vosk.demo;
 
 import android.Manifest;
 import android.app.Activity;
@@ -29,19 +29,20 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
-import org.kaldi.Assets;
-import org.kaldi.KaldiRecognizer;
-import org.kaldi.Model;
-import org.kaldi.RecognitionListener;
-import org.kaldi.SpeechService;
-import org.kaldi.Vosk;
+import org.vosk.LibVosk;
+import org.vosk.LogLevel;
+import org.vosk.android.Assets;
+import org.vosk.android.RecognitionListener;
+import org.vosk.Model;
+import org.vosk.Recognizer;
+import org.vosk.android.SpeechService;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.ref.WeakReference;
 
-public class KaldiActivity extends Activity implements
+public class VoskActivity extends Activity implements
         RecognitionListener {
 
     static private final int STATE_START = 0;
@@ -93,9 +94,9 @@ public class KaldiActivity extends Activity implements
     }
 
     private static class SetupTask extends AsyncTask<Void, Void, Exception> {
-        WeakReference<KaldiActivity> activityReference;
+        WeakReference<org.vosk.demo.VoskActivity> activityReference;
 
-        SetupTask(KaldiActivity activity) {
+        SetupTask(org.vosk.demo.VoskActivity activity) {
             this.activityReference = new WeakReference<>(activity);
         }
 
@@ -106,7 +107,7 @@ public class KaldiActivity extends Activity implements
                 File assetDir = assets.syncAssets();
                 Log.d("KaldiDemo", "Sync files in the folder " + assetDir.toString());
 
-                Vosk.SetLogLevel(0);
+                LibVosk.setLogLevel(LogLevel.INFO);
 
                 activityReference.get().model = new Model(assetDir.toString() + "/model-android");
             } catch (IOException e) {
@@ -126,21 +127,22 @@ public class KaldiActivity extends Activity implements
     }
 
     private static class RecognizeTask extends AsyncTask<Void, Void, String> {
-        WeakReference<KaldiActivity> activityReference;
+        WeakReference<org.vosk.demo.VoskActivity> activityReference;
         WeakReference<TextView> resultView;
 
-        RecognizeTask(KaldiActivity activity, TextView resultView) {
+        RecognizeTask(org.vosk.demo.VoskActivity activity, TextView resultView) {
             this.activityReference = new WeakReference<>(activity);
             this.resultView = new WeakReference<>(resultView);
         }
 
         @Override
         protected String doInBackground(Void... params) {
-            KaldiRecognizer rec;
+            Recognizer rec;
             long startTime = System.currentTimeMillis();
             StringBuilder result = new StringBuilder();
             try {
-                rec = new KaldiRecognizer(activityReference.get().model, 16000.f, "[\"oh zero one two three four five six seven eight nine\"]");
+                rec = new Recognizer(activityReference.get().model, 16000.f, "[\"one zero zero zero one\", " +
+                        "\"oh zero one two three four five six seven eight nine\", \"[unk]\"]");
 
                 InputStream ais = activityReference.get().getAssets().open("10001-90210-01803.wav");
                 if (ais.skip(44) != 44) {
@@ -149,13 +151,13 @@ public class KaldiActivity extends Activity implements
                 byte[] b = new byte[4096];
                 int nbytes;
                 while ((nbytes = ais.read(b)) >= 0) {
-                    if (rec.AcceptWaveform(b, nbytes)) {
-                        result.append(rec.Result());
+                    if (rec.acceptWaveForm(b, nbytes)) {
+                        result.append(rec.getResult());
                     } else {
-                        result.append(rec.PartialResult());
+                        result.append(rec.getPartialResult());
                     }
                 }
-                result.append(rec.FinalResult());
+                result.append(rec.getFinalResult());
             } catch (IOException e) {
                 return "";
             }
@@ -271,7 +273,7 @@ public class KaldiActivity extends Activity implements
         } else {
             setUiState(STATE_MIC);
             try {
-                KaldiRecognizer rec = new KaldiRecognizer(model, 16000.0f);
+                Recognizer rec = new Recognizer(model, 16000.0f);
                 speechService = new SpeechService(rec, 16000.0f);
                 speechService.addListener(this);
                 speechService.startListening();

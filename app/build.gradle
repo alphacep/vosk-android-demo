@@ -3,7 +3,7 @@ apply plugin: 'com.android.application'
 repositories {
     google()
     maven {
-        url  "https://dl.bintray.com/alphacep/vosk"
+        url 'https://alphacephei.com/maven/'
     }
 }
 
@@ -28,7 +28,8 @@ android {
 }
 
 dependencies {
-    implementation 'com.alphacep:vosk-android:0.3.+'
     implementation 'androidx.appcompat:appcompat:1.1.0'
+    implementation 'net.java.dev.jna:jna:5.8.0@aar'
+    implementation group: 'com.alphacephei', name: 'vosk-android', version: '0.3.21+'
     implementation project(':models')
 }
