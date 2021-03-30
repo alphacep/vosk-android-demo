@@ -57,7 +57,7 @@ public class VoskActivity extends Activity implements
 
     private Model model;
     private SpeechService speechService;
-    TextView resultView;
+    private TextView resultView;
 
     @Override
     public void onCreate(Bundle state) {
@@ -94,7 +94,7 @@ public class VoskActivity extends Activity implements
     }
 
     private static class SetupTask extends AsyncTask<Void, Void, Exception> {
-        WeakReference<org.vosk.demo.VoskActivity> activityReference;
+        final WeakReference<org.vosk.demo.VoskActivity> activityReference;
 
         SetupTask(org.vosk.demo.VoskActivity activity) {
             this.activityReference = new WeakReference<>(activity);
@@ -127,8 +127,8 @@ public class VoskActivity extends Activity implements
     }
 
     private static class RecognizeTask extends AsyncTask<Void, Void, String> {
-        WeakReference<org.vosk.demo.VoskActivity> activityReference;
-        WeakReference<TextView> resultView;
+        final WeakReference<org.vosk.demo.VoskActivity> activityReference;
+        final WeakReference<TextView> resultView;
 
         RecognizeTask(org.vosk.demo.VoskActivity activity, TextView resultView) {
             this.activityReference = new WeakReference<>(activity);
@@ -260,12 +260,12 @@ public class VoskActivity extends Activity implements
         findViewById(R.id.recognize_mic).setEnabled(false);
     }
 
-    public void recognizeFile() {
+    private void recognizeFile() {
         setUiState(STATE_FILE);
         new RecognizeTask(this, resultView).execute();
     }
 
-    public void recognizeMicrophone() {
+    private void recognizeMicrophone() {
         if (speechService != null) {
             setUiState(STATE_DONE);
             speechService.cancel();
