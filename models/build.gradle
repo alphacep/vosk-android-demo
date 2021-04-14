@@ -8,8 +8,24 @@ android {
         versionCode 1
         versionName "1.0"
     }
+    buildFeatures {
+        buildConfig = false
+    }
+    sourceSets {
+        main {
+            assets.srcDirs += "$buildDir/generated/assets"
+        }
+    }
 }
 
-ant.importBuild 'assets.xml'
-preBuild.dependsOn(list, checksum)
-clean.dependsOn(clean_assets)
+tasks.register('genUUID') {
+    def uuid = UUID.randomUUID().toString()
+    def odir = file("$buildDir/generated/assets/model-en-us")
+    def ofile = file("$odir/uuid")
+    doLast {
+        mkdir odir
+        ofile.text = uuid
+    }
+}
+
+preBuild.dependsOn(genUUID)
