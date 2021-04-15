@@ -11,5 +11,8 @@
     <string name="elapsed">Result %s elapsed %d milliseconds\n</string>
     <string name="starting">Starting\n</string>
     <string name="say_something">Say something\n</string>
+    <string name="stop_file">Stop File</string>
+    <string name="pause">Pause</string>
+    <string name="continueRecognition">Continue</string>
 
 </resources>

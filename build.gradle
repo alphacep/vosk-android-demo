@@ -16,6 +16,3 @@ allprojects {
         google()
     }
 }
-
-def verCode = UUID.randomUUID().toString()
-println verCode
