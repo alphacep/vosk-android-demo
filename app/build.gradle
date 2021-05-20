@@ -8,11 +8,11 @@ repositories {
 }
 
 android {
-    compileSdkVersion 29
+    compileSdkVersion 30
     defaultConfig {
         applicationId "org.vosk.demo"
         minSdkVersion 21
-        targetSdkVersion 29
+        targetSdkVersion 30
         versionCode 1
         versionName "1.1"
         ndk {
@@ -35,5 +35,4 @@ dependencies {
     implementation 'androidx.appcompat:appcompat:1.2.0'
     implementation 'net.java.dev.jna:jna:5.8.0@aar'
     implementation group: 'com.alphacephei', name: 'vosk-android', version: '0.3.23'
-    implementation project(':models')
 }

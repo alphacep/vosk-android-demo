@@ -16,9 +16,15 @@ package org.vosk.demo;
 
 import android.Manifest;
 import android.app.Activity;
+import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
+import android.provider.Settings;
 import android.text.method.ScrollingMovementMethod;
+import android.util.Log;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.ToggleButton;
@@ -30,7 +36,6 @@ import org.vosk.Recognizer;
 import org.vosk.android.RecognitionListener;
 import org.vosk.android.SpeechService;
 import org.vosk.android.SpeechStreamService;
-import org.vosk.android.StorageService;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -50,6 +55,7 @@ public class VoskActivity extends Activity implements
 
     /* Used to handle permission request */
     private static final int PERMISSIONS_REQUEST_RECORD_AUDIO = 1;
+    private static final int PERMISSIONS_REQUEST_ALL_FILES_ACCESS = 2;
 
     private Model model;
     private SpeechService speechService;
@@ -71,24 +77,67 @@ public class VoskActivity extends Activity implements
 
         LibVosk.setLogLevel(LogLevel.INFO);
 
-        // Check if user has given permission to record audio, init the model after permission is granted
+        // Check if user has given permission to record audio, request all files access permission after permission is granted
         int permissionCheck = ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.RECORD_AUDIO);
         if (permissionCheck != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.RECORD_AUDIO}, PERMISSIONS_REQUEST_RECORD_AUDIO);
         } else {
-            initModel();
+            requestAllFilesAccessPermission();
         }
     }
 
-    private void initModel() {
-        StorageService.unpack(this, "model-en-us", "model",
-                (model) -> {
-                    this.model = model;
-                    setUiState(STATE_READY);
-                },
-                (exception) -> setErrorState("Failed to unpack the model" + exception.getMessage()));
+    private void requestAllFilesAccessPermission() {
+        // Check if user has given all files access permission to record audio, init model after permission is granted
+        if (Build.VERSION.SDK_INT >= 30) {
+            Log.i(VoskActivity.class.getName(), "API level >= 30");
+            if (!Environment.isExternalStorageManager()) {
+                // Request permission
+                try {
+                    Intent intent = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
+                    Uri uri = Uri.fromParts("package", getPackageName(), null);
+                    intent.setData(uri);
+                    startActivityForResult(intent, PERMISSIONS_REQUEST_ALL_FILES_ACCESS);
+                } catch (android.content.ActivityNotFoundException e) {
+                    setErrorState("Failed to request all files access permission");
+                }
+            } else {
+                customInitModel();
+            }
+        } else {
+            Log.i(VoskActivity.class.getName(), "API level < 30");
+            // Request permission
+            int permissionCheck = ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.READ_EXTERNAL_STORAGE);
+            if (permissionCheck != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, PERMISSIONS_REQUEST_ALL_FILES_ACCESS);
+            } else {
+                customInitModel();
+            }
+        }
     }
 
+    private void customInitModel() {
+        try {
+            Model model = new Model(Environment.getExternalStorageDirectory().getAbsolutePath() + "/files/model-en-us");
+            this.model = model;
+            setUiState(STATE_READY);
+        } catch (Exception e) {
+            setErrorState("Failed to initialize model");
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == PERMISSIONS_REQUEST_ALL_FILES_ACCESS) {
+            if (Build.VERSION.SDK_INT >= 30) {
+                if (Environment.isExternalStorageManager()) {
+                    customInitModel();
+                } else {
+                    setErrorState("All files access permission needed");
+                }
+            }
+        }
+    }
 
     @Override
     public void onRequestPermissionsResult(int requestCode,
@@ -97,11 +146,15 @@ public class VoskActivity extends Activity implements
 
         if (requestCode == PERMISSIONS_REQUEST_RECORD_AUDIO) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                // Recognizer initialization is a time-consuming and it involves IO,
-                // so we execute it in async task
-                initModel();
+                requestAllFilesAccessPermission();
             } else {
-                finish();
+                setErrorState("Record audio permission needed");
+            }
+        } else if (requestCode == PERMISSIONS_REQUEST_ALL_FILES_ACCESS) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                customInitModel();
+            } else {
+                setErrorState("All files access permission needed");
             }
         }
     }
