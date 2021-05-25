@@ -15,16 +15,24 @@
 package org.vosk.demo;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.content.res.AssetManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
+import android.os.Looper;
 import android.provider.Settings;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.ToggleButton;
@@ -37,12 +45,18 @@ import org.vosk.android.RecognitionListener;
 import org.vosk.android.SpeechService;
 import org.vosk.android.SpeechStreamService;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.preference.PreferenceManager;
 
 public class VoskActivity extends Activity implements
         RecognitionListener {
@@ -86,6 +100,25 @@ public class VoskActivity extends Activity implements
         }
     }
 
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.main, menu);
+        return true;
+    }
+
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.action_settings:
+                startActivity(new Intent(this, SettingsActivity.class));
+                return true;
+
+            default:
+                // The user's action was not recognized.
+                // Invoke the superclass to handle it.
+                return super.onOptionsItemSelected(item);
+        }
+    }
+
     private void requestAllFilesAccessPermission() {
         // Check if user has given all files access permission to record audio, init model after permission is granted
         if (Build.VERSION.SDK_INT >= 30) {
@@ -106,22 +139,87 @@ public class VoskActivity extends Activity implements
         } else {
             Log.i(VoskActivity.class.getName(), "API level < 30");
             // Request permission
-            int permissionCheck = ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.READ_EXTERNAL_STORAGE);
+            int permissionCheck = ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE);
             if (permissionCheck != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, PERMISSIONS_REQUEST_ALL_FILES_ACCESS);
+                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, PERMISSIONS_REQUEST_ALL_FILES_ACCESS);
             } else {
                 customInitModel();
             }
         }
     }
 
+    private void downloadModel(String lang) {
+        Log.i(VoskActivity.class.getName(), "Download model");
+
+        String serverFilePath = "https://alphacephei.com/vosk/models/" + lang + ".zip";
+        String fileName = lang + ".zip";
+
+        String path = Environment.getExternalStorageDirectory().getAbsolutePath() + "/models";
+        File tmpLocal = new File(path);
+        if(!tmpLocal.exists()) {
+            tmpLocal.mkdirs();
+        }
+
+        File file = new File(path, fileName);
+        String localPath = file.getAbsolutePath();
+
+        FileDownloadService.DownloadRequest downloadRequest = new FileDownloadService.DownloadRequest(serverFilePath, localPath);
+        downloadRequest.setRequiresUnzip(true);
+        downloadRequest.setDeleteZipAfterExtract(true);
+        downloadRequest.setUnzipAtFilePath(path);
+
+        FileDownloadService.OnDownloadStatusListener listener = new FileDownloadService.OnDownloadStatusListener() {
+
+            @Override
+            public void onDownloadStarted() {
+                Log.i(VoskActivity.class.getName(), "Download started");
+            }
+
+            @Override
+            public void onDownloadCompleted() {
+                Log.i(VoskActivity.class.getName(), "Download completed");
+                customInitModel();
+            }
+
+            @Override
+            public void onDownloadFailed() {
+                setErrorState("Failed to download model");
+            }
+
+            @Override
+            public void onDownloadProgress(int progress) {
+            }
+        };
+
+        FileDownloadService.FileDownloader downloader = FileDownloadService.FileDownloader.getInstance(downloadRequest, listener);
+        downloader.download(this);
+    }
+
+
+
     private void customInitModel() {
-        try {
-            Model model = new Model(Environment.getExternalStorageDirectory().getAbsolutePath() + "/files/model-en-us");
-            this.model = model;
-            setUiState(STATE_READY);
-        } catch (Exception e) {
-            setErrorState("Failed to initialize model");
+        Log.i(VoskActivity.class.getName(), "Custom init model");
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+        String lang = sharedPreferences.getString("lang", getResources().getString(R.string.en));
+        String modelPath = Environment.getExternalStorageDirectory().getAbsolutePath() + "/models/" + lang;
+
+        File file = new File(modelPath);
+        if (file.exists()) {
+            Executor executor = Executors.newSingleThreadExecutor();
+            Handler handler = new Handler(Looper.getMainLooper());
+            executor.execute(() -> {
+                try {
+                    Model model = new Model(modelPath);
+                    handler.post(() -> {
+                        this.model = model;
+                        setUiState(STATE_READY);
+                    });
+                } catch (Exception e) {
+                    handler.post(() -> setErrorState("Failed to initialize model"));
+                }
+            });
+        } else {
+            downloadModel(lang);
         }
     }
 
@@ -259,8 +357,7 @@ public class VoskActivity extends Activity implements
         } else {
             setUiState(STATE_FILE);
             try {
-                Recognizer rec = new Recognizer(model, 16000.f, "[\"one zero zero zero one\", " +
-                        "\"oh zero one two three four five six seven eight nine\", \"[unk]\"]");
+                Recognizer rec = new Recognizer(model, 16000.f);
 
                 InputStream ais = getAssets().open(
                         "10001-90210-01803.wav");

@@ -1,0 +1,16 @@
+<resources>
+    <!-- Reply Preference -->
+    <string-array name="language_entries">
+        <item>Dutch</item>
+        <item>English</item>
+        <item>French</item>
+        <item>German</item>
+    </string-array>
+
+    <string-array name="language_values">
+        <item>@string/nl</item>
+        <item>@string/en</item>
+        <item>@string/fr</item>
+        <item>@string/de</item>
+    </string-array>
+</resources>

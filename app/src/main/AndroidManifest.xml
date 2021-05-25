@@ -1,27 +1,43 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     package="org.vosk.demo">
 
-    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission
+        android:name="android.permission.MANAGE_EXTERNAL_STORAGE"
+        tools:ignore="ScopedStorage" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
     <application
         android:allowBackup="false"
         android:icon="@drawable/icon"
-        android:label="@string/app_name">
+        android:label="@string/app_name"
+        android:requestLegacyExternalStorage="true">
         <activity
-            android:name="VoskActivity"
-            android:label="@string/app_name" >
+            android:name=".SettingsActivity"
+            android:theme="@style/Theme.AppCompat"
+            android:label="@string/title_activity_settings"
+            android:parentActivityName=".VoskActivity">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="org.vosk.demo.VoskActivity" />
+        </activity>
+        <activity
+            android:name=".VoskActivity"
+            android:label="@string/app_name">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
-                <!--
-                Makes this app visible on the application list in the Glass Launcher.
-                -->
+                <!--                 Makes this app visible on the application list in the Glass Launcher. -->
                 <category android:name="com.google.android.glass.category.DIRECTORY" />
             </intent-filter>
         </activity>
+
+        <service android:name=".FileDownloadService" />
     </application>
+
 </manifest>

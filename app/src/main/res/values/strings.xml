@@ -14,5 +14,19 @@
     <string name="stop_file">Stop File</string>
     <string name="pause">Pause</string>
     <string name="continueRecognition">Continue</string>
+    <string name="title_activity_settings">Settings</string>
+    <string name="action_settings">Settings</string>
+
+    <!-- Preference Titles -->
+    <string name="language_header">Languages</string>
+
+    <!-- Language Preferences -->
+    <string name="language_title">Language to use for speech recognition</string>
+
+    <!-- Language Entry Values -->
+    <string name="nl">vosk-model-nl-spraakherkenning-0.6-lgraph</string>
+    <string name="en">vosk-model-small-en-us-0.15</string>
+    <string name="fr">vosk-model-small-fr-pguyot-0.3</string>
+    <string name="de">vosk-model-small-de-0.15</string>
 
 </resources>
