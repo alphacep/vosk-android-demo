@@ -2,9 +2,8 @@ apply plugin: 'com.android.application'
 
 repositories {
     google()
-    maven {
-        url 'https://alphacephei.com/maven/'
-    }
+    maven { url 'https://alphacephei.com/maven/' }
+    // maven { url 'https://jitpack.io' }
 }
 
 android {
@@ -34,8 +33,11 @@ android {
 dependencies {
     implementation 'androidx.appcompat:appcompat:1.2.0'
     implementation 'net.java.dev.jna:jna:5.8.0@aar'
-    implementation group: 'com.alphacephei', name: 'vosk-android', version: '0.3.23'
+    implementation 'com.alphacephei:vosk-android:0.3.23'
+//  implementation 'com.github.alphacephei:vosk-api:0.3.23'
     implementation 'androidx.preference:preference:1.1.1'
     implementation 'com.google.android.material:material:1.2.1'
     implementation 'org.jetbrains:annotations:15.0'
+    implementation 'com.google.code.gson:gson:2.8.6'
+
 }

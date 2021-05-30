@@ -15,12 +15,12 @@
 package org.vosk.demo;
 
 import android.Manifest;
-import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.content.res.AssetManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -46,10 +46,9 @@ import org.vosk.android.SpeechService;
 import org.vosk.android.SpeechStreamService;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
+import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
@@ -58,8 +57,11 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.preference.PreferenceManager;
 
+import com.google.gson.Gson;
+
 public class VoskActivity extends Activity implements
         RecognitionListener {
+    private final static String TAG = VoskActivity.class.getSimpleName();
 
     static private final int STATE_START = 0;
     static private final int STATE_READY = 1;
@@ -67,9 +69,13 @@ public class VoskActivity extends Activity implements
     static private final int STATE_FILE = 3;
     static private final int STATE_MIC = 4;
 
+    static private final int LANGUAGE_CHANGED = 5;
+
     /* Used to handle permission request */
     private static final int PERMISSIONS_REQUEST_RECORD_AUDIO = 1;
     private static final int PERMISSIONS_REQUEST_ALL_FILES_ACCESS = 2;
+    private static final boolean DEBUG = false;
+    private static final String MODEL_FILE_PATH = Environment.getExternalStorageDirectory().getAbsolutePath() + "/models/";
 
     private Model model;
     private SpeechService speechService;
@@ -109,7 +115,7 @@ public class VoskActivity extends Activity implements
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.action_settings:
-                startActivity(new Intent(this, SettingsActivity.class));
+                showSettings();
                 return true;
 
             default:
@@ -152,9 +158,10 @@ public class VoskActivity extends Activity implements
         Log.i(VoskActivity.class.getName(), "Download model");
 
         String serverFilePath = "https://alphacephei.com/vosk/models/" + lang + ".zip";
+
         String fileName = lang + ".zip";
 
-        String path = Environment.getExternalStorageDirectory().getAbsolutePath() + "/models";
+        String path = MODEL_FILE_PATH;
         File tmpLocal = new File(path);
         if(!tmpLocal.exists()) {
             tmpLocal.mkdirs();
@@ -163,6 +170,7 @@ public class VoskActivity extends Activity implements
         File file = new File(path, fileName);
         String localPath = file.getAbsolutePath();
 
+        appendMessage("Downloading from " + serverFilePath + " to " + localPath);
         FileDownloadService.DownloadRequest downloadRequest = new FileDownloadService.DownloadRequest(serverFilePath, localPath);
         downloadRequest.setRequiresUnzip(true);
         downloadRequest.setDeleteZipAfterExtract(true);
@@ -199,28 +207,81 @@ public class VoskActivity extends Activity implements
 
     private void customInitModel() {
         Log.i(VoskActivity.class.getName(), "Custom init model");
-        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
-        String lang = sharedPreferences.getString("lang", getResources().getString(R.string.en));
-        String modelPath = Environment.getExternalStorageDirectory().getAbsolutePath() + "/models/" + lang;
-
-        File file = new File(modelPath);
-        if (file.exists()) {
-            Executor executor = Executors.newSingleThreadExecutor();
-            Handler handler = new Handler(Looper.getMainLooper());
-            executor.execute(() -> {
-                try {
-                    Model model = new Model(modelPath);
-                    handler.post(() -> {
-                        this.model = model;
-                        setUiState(STATE_READY);
-                    });
-                } catch (Exception e) {
-                    handler.post(() -> setErrorState("Failed to initialize model"));
-                }
-            });
+        String lang = getLanguage();
+        if (lang == null) {
+            // first app start
+            showSettings();
         } else {
-            downloadModel(lang);
+            String modelPath = MODEL_FILE_PATH + lang;
+
+            File file = new File(modelPath);
+            if (file.exists()) {
+                loadModel(modelPath);
+            } else {
+                final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+
+                builder.setTitle(getString(R.string.title_download_model, lang));
+                builder.setMessage(getString(R.string.description_download_model, lang))
+                        .setCancelable(false)
+                        .setPositiveButton(R.string.download,
+                                new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(
+                                            final DialogInterface dialog,
+                                            final int id) {
+                                        downloadModel(lang);
+                                    }
+                                }
+                        )
+                        .setNeutralButton(R.string.title_activity_settings, new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                showSettings();
+                            }
+                        })
+                        .setNegativeButton(android.R.string.cancel,
+                                new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(
+                                            final DialogInterface dialog,
+                                            final int id) {
+                                        dialog.cancel();
+                                        finish();
+                                    }
+                                }
+                        );
+
+                builder.create().show();
+
+            }
         }
+    }
+
+    private void loadModel(String modelPath) {
+        appendMessage("Loading model from " + modelPath);
+        Executor executor = Executors.newSingleThreadExecutor();
+        Handler handler = new Handler(Looper.getMainLooper());
+        executor.execute(() -> {
+            try {
+                Model model = new Model(modelPath);
+                handler.post(() -> {
+                    this.model = model;
+                    setUiState(STATE_READY);
+                });
+            } catch (Exception e) {
+                handler.post(() -> setErrorState("Failed to initialize model"));
+            }
+        });
+    }
+
+    private void showSettings() {
+        startActivityForResult(new Intent(this, SettingsActivity.class), LANGUAGE_CHANGED);
+    }
+
+    private String getLanguage() {
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+        String lang = sharedPreferences.getString("lang", null);
+        return lang;
     }
 
     @Override
@@ -234,6 +295,8 @@ public class VoskActivity extends Activity implements
                     setErrorState("All files access permission needed");
                 }
             }
+        } else if (requestCode == LANGUAGE_CHANGED) {
+            customInitModel();
         }
     }
 
@@ -273,12 +336,33 @@ public class VoskActivity extends Activity implements
 
     @Override
     public void onResult(String hypothesis) {
-        resultView.append(hypothesis + "\n");
+        // json: {"result":[], "text":"hello world"}
+
+        if (DEBUG) {
+            appendMessage("onResult:" + hypothesis);
+        } else {
+            String textFromJson = getTextFromJson(hypothesis);
+            if (!textFromJson.trim().isEmpty()) {
+                appendMessage(textFromJson);
+            }
+        }
+    }
+
+    private void appendMessage(String text) {
+        resultView.append(text);
+        resultView.append("\n");
+    }
+
+    private String getTextFromJson(String hypothesis) {
+        Log.i(TAG, hypothesis);
+        Gson gson = new Gson();
+        Map<String, String> map = gson.fromJson(hypothesis, Map.class);
+        return map.get("text");
     }
 
     @Override
     public void onFinalResult(String hypothesis) {
-        resultView.append(hypothesis + "\n");
+        appendMessage("onFinalResult:" + hypothesis);
         setUiState(STATE_DONE);
         if (speechStreamService != null) {
             speechStreamService = null;
@@ -287,7 +371,10 @@ public class VoskActivity extends Activity implements
 
     @Override
     public void onPartialResult(String hypothesis) {
-        resultView.append(hypothesis + "\n");
+        // json: {"partial":"hello world"}
+        if (DEBUG) {
+            appendMessage("onPartialResult: " + hypothesis);
+        }
     }
 
     @Override

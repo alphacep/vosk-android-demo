@@ -13,9 +13,13 @@
     <string name="say_something">Say something\n</string>
     <string name="stop_file">Stop File</string>
     <string name="pause">Pause</string>
+    <string name="download">Download</string>
     <string name="continueRecognition">Continue</string>
     <string name="title_activity_settings">Settings</string>
     <string name="action_settings">Settings</string>
+
+    <string name="title_download_model">Translaton Model Data (%1$s) is not installed</string>
+    <string name="description_download_model">Do you want to download the Translaton Model Data for language %1$s? (about 50 Megabytes) </string>
 
     <!-- Preference Titles -->
     <string name="language_header">Languages</string>
@@ -28,5 +32,16 @@
     <string name="en">vosk-model-small-en-us-0.15</string>
     <string name="fr">vosk-model-small-fr-pguyot-0.3</string>
     <string name="de">vosk-model-small-de-0.15</string>
-
+    /*
+    vosk-model-small-cn-0.3
+    vosk-model-small-ru-0.15
+    vosk-model-small-es-0.3
+    vosk-model-small-pt-0.3
+    vosk-model-small-tr-0.3
+    vosk-model-small-vn-0.3
+    vosk-model-small-it-0.4
+    vosk-model-small-ca-0.4
+    vosk-model-small-fa-0.4
+    vosk-model-small-uk-v3-small
+    */
 </resources>
