@@ -69,7 +69,7 @@ public class VoskActivity extends Activity implements
     static private final int STATE_FILE = 3;
     static private final int STATE_MIC = 4;
 
-    static private final int LANGUAGE_CHANGED = 5;
+    static private final int ON_LANGUAGE_CHANGED = 5;
 
     /* Used to handle permission request */
     private static final int PERMISSIONS_REQUEST_RECORD_AUDIO = 1;
@@ -207,21 +207,21 @@ public class VoskActivity extends Activity implements
 
     private void customInitModel() {
         Log.i(VoskActivity.class.getName(), "Custom init model");
-        String lang = getLanguage();
-        if (lang == null) {
-            // first app start
+        String currentLanguageModelFolderName = getCurrentLanguageModelFolderName();
+        if (currentLanguageModelFolderName == null) {
+            // first app start: Ask user which language to use
             showSettings();
         } else {
-            String modelPath = MODEL_FILE_PATH + lang;
+            String modelPath = MODEL_FILE_PATH + currentLanguageModelFolderName;
 
             File file = new File(modelPath);
             if (file.exists()) {
-                loadModel(modelPath);
+                loadModelFromFileInBackground(modelPath);
             } else {
                 final AlertDialog.Builder builder = new AlertDialog.Builder(this);
 
-                builder.setTitle(getString(R.string.title_download_model, lang));
-                builder.setMessage(getString(R.string.description_download_model, lang))
+                builder.setTitle(getString(R.string.title_download_model, currentLanguageModelFolderName));
+                builder.setMessage(getString(R.string.description_download_model, currentLanguageModelFolderName))
                         .setCancelable(false)
                         .setPositiveButton(R.string.download,
                                 new DialogInterface.OnClickListener() {
@@ -229,7 +229,7 @@ public class VoskActivity extends Activity implements
                                     public void onClick(
                                             final DialogInterface dialog,
                                             final int id) {
-                                        downloadModel(lang);
+                                        downloadModel(currentLanguageModelFolderName);
                                     }
                                 }
                         )
@@ -257,7 +257,9 @@ public class VoskActivity extends Activity implements
         }
     }
 
-    private void loadModel(String modelPath) {
+    // Recognizer initialization is a time-consuming and it involves IO,
+    // so we execute it in async task
+    private void loadModelFromFileInBackground(String modelPath) {
         appendMessage("Loading model from " + modelPath);
         Executor executor = Executors.newSingleThreadExecutor();
         Handler handler = new Handler(Looper.getMainLooper());
@@ -275,10 +277,10 @@ public class VoskActivity extends Activity implements
     }
 
     private void showSettings() {
-        startActivityForResult(new Intent(this, SettingsActivity.class), LANGUAGE_CHANGED);
+        startActivityForResult(new Intent(this, SettingsActivity.class), ON_LANGUAGE_CHANGED);
     }
 
-    private String getLanguage() {
+    private String getCurrentLanguageModelFolderName() {
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
         String lang = sharedPreferences.getString("lang", null);
         return lang;
@@ -295,7 +297,7 @@ public class VoskActivity extends Activity implements
                     setErrorState("All files access permission needed");
                 }
             }
-        } else if (requestCode == LANGUAGE_CHANGED) {
+        } else if (requestCode == ON_LANGUAGE_CHANGED) {
             customInitModel();
         }
     }
