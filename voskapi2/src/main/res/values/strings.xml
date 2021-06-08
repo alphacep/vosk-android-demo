@@ -1,0 +1,4 @@
+<resources>
+    <string name="language_not_found">Language \'%s\' not found</string>
+    <string name="language_must_download">Do you want to download \'%s\' (50 MB) ?</string>
+</resources>

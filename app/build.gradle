@@ -1,16 +1,10 @@
 apply plugin: 'com.android.application'
 
-repositories {
-    google()
-    maven { url 'https://alphacephei.com/maven/' }
-    // maven { url 'https://jitpack.io' }
-}
-
 android {
     compileSdkVersion 30
     defaultConfig {
         applicationId "org.vosk.demo"
-        minSdkVersion 21
+        minSdkVersion 24
         targetSdkVersion 30
         versionCode 1
         versionName "1.1"
@@ -31,6 +25,11 @@ android {
 }
 
 dependencies {
+    implementation project(':voskapi2')
+
+    implementation 'org.slf4j:slf4j-api:1.7.7@jar'
+    implementation 'eu.lp0.slf4j:slf4j-android:1.7.7-1@jar'
+
     implementation 'androidx.appcompat:appcompat:1.2.0'
     implementation 'net.java.dev.jna:jna:5.8.0@aar'
     implementation 'com.alphacephei:vosk-android:0.3.23'

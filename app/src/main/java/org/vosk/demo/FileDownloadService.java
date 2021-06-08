@@ -72,41 +72,7 @@ public class FileDownloadService extends IntentService {
             assert downloadDetails != null;
             URL url = new URL(downloadDetails.getServerFilePath());
 
-            URLConnection urlConnection = url.openConnection();
-
-            urlConnection.connect();
-
-            int lengthOfFile = urlConnection.getContentLength();
-
-            Log.d("FileDownloaderService", "Length of file: " + lengthOfFile);
-            downloadStarted(resultReceiver);
-
-            InputStream input = new BufferedInputStream(url.openStream());
-
-            String localPath = downloadDetails.getLocalFilePath();
-
-            OutputStream output = new FileOutputStream(localPath);
-
-            byte data[] = new byte[1024];
-
-            long total = 0;
-
-            int count;
-
-            while ((count = input.read(data)) != -1) {
-
-                total += count;
-
-                int progress = (int) ((total * 100) / lengthOfFile);
-
-                sendProgress(progress, resultReceiver);
-
-                output.write(data, 0, count);
-            }
-
-            output.flush();
-            output.close();
-            input.close();
+            String localPath = execDownload(url, resultReceiver, downloadDetails.localFilePath);
 
             if (downloadDetails.isRequiresUnzip()) {
 
@@ -137,6 +103,43 @@ public class FileDownloadService extends IntentService {
             downloadFailed(resultReceiver);
         }
 
+    }
+
+    private String execDownload(URL url, ResultReceiver resultReceiver, String localPath) throws IOException {
+        URLConnection urlConnection = url.openConnection();
+
+        urlConnection.connect();
+
+        int lengthOfFile = urlConnection.getContentLength();
+
+        Log.d("FileDownloaderService", "Length of file: " + lengthOfFile);
+        downloadStarted(resultReceiver);
+
+        InputStream input = new BufferedInputStream(url.openStream());
+
+        OutputStream output = new FileOutputStream(localPath);
+
+        byte data[] = new byte[1024];
+
+        long total = 0;
+
+        int count;
+
+        while ((count = input.read(data)) != -1) {
+
+            total += count;
+
+            int progress = (int) ((total * 100) / lengthOfFile);
+
+            sendProgress(progress, resultReceiver);
+
+            output.write(data, 0, count);
+        }
+
+        output.flush();
+        output.close();
+        input.close();
+        return localPath;
     }
 
     public void sendProgress(int progress, ResultReceiver receiver) {

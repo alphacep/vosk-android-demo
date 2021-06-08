@@ -60,7 +60,7 @@ import androidx.preference.PreferenceManager;
 import com.google.gson.Gson;
 
 public class VoskActivity extends Activity implements
-        RecognitionListener {
+        RecognitionListener, VoskEvents {
     private final static String TAG = VoskActivity.class.getSimpleName();
 
     static private final int STATE_START = 0;
@@ -170,7 +170,7 @@ public class VoskActivity extends Activity implements
         File file = new File(path, fileName);
         String localPath = file.getAbsolutePath();
 
-        appendMessage("Downloading from " + serverFilePath + " to " + localPath);
+        debug("Downloading from " + serverFilePath + " to " + localPath);
         FileDownloadService.DownloadRequest downloadRequest = new FileDownloadService.DownloadRequest(serverFilePath, localPath);
         downloadRequest.setRequiresUnzip(true);
         downloadRequest.setDeleteZipAfterExtract(true);
@@ -257,17 +257,21 @@ public class VoskActivity extends Activity implements
         }
     }
 
+    public void setModel(Model model) {
+        this.model = model;
+    }
+
     // Recognizer initialization is a time-consuming and it involves IO,
     // so we execute it in async task
     private void loadModelFromFileInBackground(String modelPath) {
-        appendMessage("Loading model from " + modelPath);
+        debug("Loading model from " + modelPath);
         Executor executor = Executors.newSingleThreadExecutor();
         Handler handler = new Handler(Looper.getMainLooper());
         executor.execute(() -> {
             try {
                 Model model = new Model(modelPath);
                 handler.post(() -> {
-                    this.model = model;
+                    setModel(model);
                     setUiState(STATE_READY);
                 });
             } catch (Exception e) {
@@ -341,7 +345,7 @@ public class VoskActivity extends Activity implements
         // json: {"result":[], "text":"hello world"}
 
         if (DEBUG) {
-            appendMessage("onResult:" + hypothesis);
+            debug("onResult:" + hypothesis);
         } else {
             String textFromJson = getTextFromJson(hypothesis);
             if (!textFromJson.trim().isEmpty()) {
@@ -355,6 +359,10 @@ public class VoskActivity extends Activity implements
         resultView.append("\n");
     }
 
+    private void debug(String text) {
+        appendMessage(text);
+    }
+
     private String getTextFromJson(String hypothesis) {
         Log.i(TAG, hypothesis);
         Gson gson = new Gson();
@@ -364,7 +372,7 @@ public class VoskActivity extends Activity implements
 
     @Override
     public void onFinalResult(String hypothesis) {
-        appendMessage("onFinalResult:" + hypothesis);
+        debug("onFinalResult:" + hypothesis);
         setUiState(STATE_DONE);
         if (speechStreamService != null) {
             speechStreamService = null;
@@ -375,7 +383,7 @@ public class VoskActivity extends Activity implements
     public void onPartialResult(String hypothesis) {
         // json: {"partial":"hello world"}
         if (DEBUG) {
-            appendMessage("onPartialResult: " + hypothesis);
+            debug("onPartialResult: " + hypothesis);
         }
     }
 
@@ -483,5 +491,4 @@ public class VoskActivity extends Activity implements
             speechService.setPause(checked);
         }
     }
-
 }
