@@ -26,22 +26,4 @@
 
     <!-- Language Preferences -->
     <string name="language_title">Language to use for speech recognition</string>
-
-    <!-- Language Entry Values -->
-    <string name="nl">vosk-model-nl-spraakherkenning-0.6-lgraph</string>
-    <string name="en">vosk-model-small-en-us-0.15</string>
-    <string name="fr">vosk-model-small-fr-pguyot-0.3</string>
-    <string name="de">vosk-model-small-de-0.15</string>
-    /*
-    vosk-model-small-cn-0.3
-    vosk-model-small-ru-0.15
-    vosk-model-small-es-0.3
-    vosk-model-small-pt-0.3
-    vosk-model-small-tr-0.3
-    vosk-model-small-vn-0.3
-    vosk-model-small-it-0.4
-    vosk-model-small-ca-0.4
-    vosk-model-small-fa-0.4
-    vosk-model-small-uk-v3-small
-    */
 </resources>
