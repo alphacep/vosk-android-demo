@@ -1,8 +1,8 @@
 package org.vosk.api;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Map;
@@ -50,7 +50,8 @@ public class LanguageModelDefinition {
 
     public static Map<String, LanguageModelDefinition> getLanguages(InputStream in) throws IOException {
         Properties properties = new Properties();
-        properties.load(in);
+        // note: Properties standard use iso-8859-1. However this app uses utf8
+        properties.load(new InputStreamReader(in, "UTF8"));
         return getLanguages(properties);
     }
 

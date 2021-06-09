@@ -27,10 +27,7 @@ public class VoskHelper {
             File modelRootDir, LanguageModelDefinition languageModelDefinition,
             String exceptionFormatIfNotFound, BiConsumer<String, Integer> progress) throws CompletionException {
 
-        File modelDir = new File(modelRootDir, languageModelDefinition.getModelId());
-        if (isModel(modelDir)) return modelDir;
-
-        modelDir = new File(modelRootDir, languageModelDefinition.getId());
+        File modelDir = new File(modelRootDir, languageModelDefinition.getId());
         if (isModel(modelDir))  return modelDir;
 
         if (exceptionFormatIfNotFound != null) throw new CompletionException(String.format(exceptionFormatIfNotFound, languageModelDefinition.getLocaleName()), null);
@@ -50,7 +47,7 @@ public class VoskHelper {
     }
 
     private static boolean isModel(File modelDir) {
-        return modelDir.exists() && modelDir.isDirectory() && modelDir.listFiles().length > 5;
+        return modelDir.exists() && modelDir.isDirectory() && modelDir.listFiles().length > 3;
     }
 
     public static void downloadAndUnzip(URL url, File localZipPath, BiConsumer<String, Integer> progress) throws IOException {

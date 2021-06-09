@@ -6,7 +6,6 @@ import android.os.Handler;
 import android.os.Looper;
 
 import org.vosk.Model;
-import org.vosk.api.R;
 
 import java.io.File;
 import java.io.IOException;
@@ -19,10 +18,10 @@ import java.util.function.BiConsumer;
 /** Android specific code to download, unzip and initialize a Model through local file system */
 public class VoskHelperAndroid extends VoskHelper {
     private static final File MODEL_FILE_ROOT_PATH = new File(Environment.getExternalStorageDirectory(),"models");
-    private static final String LANGUAGES_PROPERIES = "languages.properies";
+    private static final String LANGUAGES_PROPERIES = "languages.properties";
 
     public static Map<String, LanguageModelDefinition> getLanguages(Context context) throws CompletionException {
-        try(InputStream in = context.getAssets().open(LANGUAGES_PROPERIES)) {
+        try(InputStream in =  context.getAssets().open(LANGUAGES_PROPERIES)) {
             return LanguageModelDefinition.getLanguages(in);
         } catch (IOException ex) {
             throw new CompletionException("Cannot load " + LANGUAGES_PROPERIES + " from assets", ex);
