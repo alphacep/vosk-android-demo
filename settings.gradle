@@ -1,1 +1,3 @@
-include ':models', ':app'
+include ':app'
+// include ':voskspeechservice'
+include ':voskapi2'

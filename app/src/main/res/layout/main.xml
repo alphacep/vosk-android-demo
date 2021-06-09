@@ -4,6 +4,7 @@
     android:layout_height="fill_parent"
     android:orientation="vertical"
     android:padding="16dp">
+
     <Button
         android:id="@+id/recognize_file"
         android:layout_width="match_parent"
@@ -29,6 +30,7 @@
         android:layout_height="wrap_content"
         android:gravity="bottom"
         android:scrollbars="vertical"
+        android:textIsSelectable="true"
         android:textAppearance="?android:attr/textAppearanceMedium" />
 
 </LinearLayout>

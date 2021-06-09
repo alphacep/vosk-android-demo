@@ -13,6 +13,17 @@
     <string name="say_something">Say something\n</string>
     <string name="stop_file">Stop File</string>
     <string name="pause">Pause</string>
+    <string name="download">Download</string>
     <string name="continueRecognition">Continue</string>
+    <string name="title_activity_settings">Settings</string>
+    <string name="action_settings">Settings</string>
 
+    <string name="title_download_model">Translaton Model Data (%1$s) is not installed</string>
+    <string name="description_download_model">Do you want to download the Translaton Model Data for language %1$s? (about 50 Megabytes) </string>
+
+    <!-- Preference Titles -->
+    <string name="language_header">Languages</string>
+
+    <!-- Language Preferences -->
+    <string name="language_title">Language to use for speech recognition</string>
 </resources>
