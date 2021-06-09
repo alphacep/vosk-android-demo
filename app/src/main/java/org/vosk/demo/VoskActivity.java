@@ -44,13 +44,12 @@ import org.vosk.Recognizer;
 import org.vosk.android.RecognitionListener;
 import org.vosk.android.SpeechService;
 import org.vosk.android.SpeechStreamService;
+import org.vosk.api.VoskHelperAndroid;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
+import java.util.function.BiConsumer;
 
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
@@ -60,7 +59,7 @@ import androidx.preference.PreferenceManager;
 import com.google.gson.Gson;
 
 public class VoskActivity extends Activity implements
-        RecognitionListener, VoskEvents {
+        RecognitionListener {
     private final static String TAG = VoskActivity.class.getSimpleName();
 
     static private final int STATE_START = 0;
@@ -75,12 +74,14 @@ public class VoskActivity extends Activity implements
     private static final int PERMISSIONS_REQUEST_RECORD_AUDIO = 1;
     private static final int PERMISSIONS_REQUEST_ALL_FILES_ACCESS = 2;
     private static final boolean DEBUG = false;
-    private static final String MODEL_FILE_PATH = Environment.getExternalStorageDirectory().getAbsolutePath() + "/models/";
+    private static final String CONFIRM_DOWNLOAD = "Confirm Download";
 
     private Model model;
     private SpeechService speechService;
     private SpeechStreamService speechStreamService;
     private TextView resultView;
+
+    private BiConsumer<String, Integer> progress = null;
 
     @Override
     public void onCreate(Bundle state) {
@@ -154,139 +155,97 @@ public class VoskActivity extends Activity implements
         }
     }
 
-    private void downloadModel(String lang) {
-        Log.i(VoskActivity.class.getName(), "Download model");
-
-        String serverFilePath = "https://alphacephei.com/vosk/models/" + lang + ".zip";
-
-        String fileName = lang + ".zip";
-
-        String path = MODEL_FILE_PATH;
-        File tmpLocal = new File(path);
-        if(!tmpLocal.exists()) {
-            tmpLocal.mkdirs();
-        }
-
-        File file = new File(path, fileName);
-        String localPath = file.getAbsolutePath();
-
-        debug("Downloading from " + serverFilePath + " to " + localPath);
-        FileDownloadService.DownloadRequest downloadRequest = new FileDownloadService.DownloadRequest(serverFilePath, localPath);
-        downloadRequest.setRequiresUnzip(true);
-        downloadRequest.setDeleteZipAfterExtract(true);
-        downloadRequest.setUnzipAtFilePath(path);
-
-        FileDownloadService.OnDownloadStatusListener listener = new FileDownloadService.OnDownloadStatusListener() {
-
-            @Override
-            public void onDownloadStarted() {
-                Log.i(VoskActivity.class.getName(), "Download started");
-            }
-
-            @Override
-            public void onDownloadCompleted() {
-                Log.i(VoskActivity.class.getName(), "Download completed");
-                customInitModel();
-            }
-
-            @Override
-            public void onDownloadFailed() {
-                setErrorState("Failed to download model");
-            }
-
-            @Override
-            public void onDownloadProgress(int progress) {
-            }
-        };
-
-        FileDownloadService.FileDownloader downloader = FileDownloadService.FileDownloader.getInstance(downloadRequest, listener);
-        downloader.download(this);
-    }
-
-
-
+    /** (Down)Load current Model */
     private void customInitModel() {
         Log.i(VoskActivity.class.getName(), "Custom init model");
-        String currentLanguageModelFolderName = getCurrentLanguageModelFolderName();
-        if (currentLanguageModelFolderName == null) {
+
+        String currentLanguageModelId = getCurrentLanguageModelId();
+        if (currentLanguageModelId == null) {
             // first app start: Ask user which language to use
             showSettings();
         } else {
-            String modelPath = MODEL_FILE_PATH + currentLanguageModelFolderName;
-
-            File file = new File(modelPath);
-            if (file.exists()) {
-                loadModelFromFileInBackground(modelPath);
-            } else {
-                final AlertDialog.Builder builder = new AlertDialog.Builder(this);
-
-                builder.setTitle(getString(R.string.title_download_model, currentLanguageModelFolderName));
-                builder.setMessage(getString(R.string.description_download_model, currentLanguageModelFolderName))
-                        .setCancelable(false)
-                        .setPositiveButton(R.string.download,
-                                new DialogInterface.OnClickListener() {
-                                    @Override
-                                    public void onClick(
-                                            final DialogInterface dialog,
-                                            final int id) {
-                                        downloadModel(currentLanguageModelFolderName);
-                                    }
-                                }
-                        )
-                        .setNeutralButton(R.string.title_activity_settings, new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                showSettings();
-                            }
-                        })
-                        .setNegativeButton(android.R.string.cancel,
-                                new DialogInterface.OnClickListener() {
-                                    @Override
-                                    public void onClick(
-                                            final DialogInterface dialog,
-                                            final int id) {
-                                        dialog.cancel();
-                                        finish();
-                                    }
-                                }
-                        );
-
-                builder.create().show();
-
-            }
+            VoskHelperAndroid.loadOrDownloadModelInBackground(
+                    this, currentLanguageModelId, CONFIRM_DOWNLOAD,
+                    (m,ex) -> onLoadModelResult(m,ex), progress);
         }
+    }
+
+    /** called after (Down)Load Model finished or failed */
+    private void onLoadModelResult(Model model, Throwable exception) {
+        if (exception != null) {
+            if (exception.getCause() == null) {
+                if (exception.getMessage().contains(CONFIRM_DOWNLOAD)) {
+                    onConfirmDownload();
+                } else {
+                    // unknown language ask for language
+                    showSettings();
+                }
+            } else {
+                //!!! download/Load failed
+                setErrorState(exception.getMessage());
+            }
+        } else {
+            //!!! success
+            setModel(model);
+            setUiState(STATE_READY);
+        }
+    }
+
+    /** Model has not been downloaded. Ask for Confirmation */
+    private void onConfirmDownload() {
+        String currentLanguageModelId = getCurrentLanguageModelId();
+
+        final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+
+        builder.setTitle(getString(R.string.title_download_model, currentLanguageModelId));
+        builder.setMessage(getString(R.string.description_download_model, currentLanguageModelId))
+                .setCancelable(false)
+                .setPositiveButton(R.string.download,
+                        new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(
+                                    final DialogInterface dialog,
+                                    final int id) {
+                                VoskHelperAndroid.loadOrDownloadModelInBackground(
+                                        VoskActivity.this, currentLanguageModelId, null,
+                                        (m,ex) -> onLoadModelResult(m,ex), progress);
+                            }
+                        }
+                )
+                .setNeutralButton(R.string.title_activity_settings, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        showSettings();
+                    }
+                })
+                .setNegativeButton(android.R.string.cancel,
+                        new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(
+                                    final DialogInterface dialog,
+                                    final int id) {
+                                dialog.cancel();
+                                finish();
+                            }
+                        }
+                );
+
+        builder.create().show();
+
     }
 
     public void setModel(Model model) {
         this.model = model;
     }
 
-    // Recognizer initialization is a time-consuming and it involves IO,
-    // so we execute it in async task
-    private void loadModelFromFileInBackground(String modelPath) {
-        debug("Loading model from " + modelPath);
-        Executor executor = Executors.newSingleThreadExecutor();
-        Handler handler = new Handler(Looper.getMainLooper());
-        executor.execute(() -> {
-            try {
-                Model model = new Model(modelPath);
-                handler.post(() -> {
-                    setModel(model);
-                    setUiState(STATE_READY);
-                });
-            } catch (Exception e) {
-                handler.post(() -> setErrorState("Failed to initialize model"));
-            }
-        });
-    }
-
     private void showSettings() {
         startActivityForResult(new Intent(this, SettingsActivity.class), ON_LANGUAGE_CHANGED);
     }
 
-    private String getCurrentLanguageModelFolderName() {
+    private String getCurrentLanguageModelId() {
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
         String lang = sharedPreferences.getString("lang", null);
+        setTitle(getText(R.string.app_name) + " " + lang);
         return lang;
     }
 
@@ -484,7 +443,6 @@ public class VoskActivity extends Activity implements
             }
         }
     }
-
 
     private void pause(boolean checked) {
         if (speechService != null) {

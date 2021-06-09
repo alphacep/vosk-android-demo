@@ -36,8 +36,6 @@
                 <category android:name="com.google.android.glass.category.DIRECTORY" />
             </intent-filter>
         </activity>
-
-        <service android:name=".FileDownloadService" />
     </application>
 
 </manifest>
