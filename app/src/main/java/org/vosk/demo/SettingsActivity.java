@@ -12,6 +12,7 @@ import androidx.preference.PreferenceFragmentCompat;
 import org.vosk.api.LanguageModelDefinition;
 import org.vosk.api.VoskHelperAndroid;
 
+import java.io.File;
 import java.util.Collection;
 
 public class SettingsActivity extends AppCompatActivity {
@@ -40,8 +41,14 @@ public class SettingsActivity extends AppCompatActivity {
 
             ListPreference localePreference = findPreference("lang");
             Collection<LanguageModelDefinition> languages = VoskHelperAndroid.getLanguages(getContext()).values();
-            localePreference.setEntries(languages.stream().map(l -> l.getLocaleName()).toArray(CharSequence[]::new));
+            localePreference.setEntries(languages.stream().map(l -> getLocaleName(l)).toArray(CharSequence[]::new));
             localePreference.setEntryValues(languages.stream().map(l -> l.getId()).toArray(CharSequence[]::new));
+        }
+
+        private String getLocaleName(LanguageModelDefinition l) {
+            File file = new File(VoskHelperAndroid.MODEL_FILE_ROOT_PATH, l.getId());
+            String prefix = VoskHelperAndroid.isModel(file) ? "[v] " : "[_] ";
+            return prefix + l.getLocaleName();
         }
     }
 

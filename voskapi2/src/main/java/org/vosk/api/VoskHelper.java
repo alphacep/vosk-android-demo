@@ -46,7 +46,7 @@ public class VoskHelper {
         return modelDir;
     }
 
-    private static boolean isModel(File modelDir) {
+    public static boolean isModel(File modelDir) {
         return modelDir.exists() && modelDir.isDirectory() && modelDir.listFiles().length > 3;
     }
 
