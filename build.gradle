@@ -2,7 +2,12 @@
 
 buildscript {
     repositories {
+        gradlePluginPortal()
         google()
+        mavenCentral()
+        maven {
+            url 'https://alphacephei.com/maven/'
+        }
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:7.0.3'
@@ -11,6 +16,11 @@ buildscript {
 
 allprojects {
     repositories {
+        gradlePluginPortal()
         google()
+        mavenCentral()
+        maven {
+            url 'https://alphacephei.com/maven/'
+        }
     }
 }
