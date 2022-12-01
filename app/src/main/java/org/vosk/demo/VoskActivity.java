@@ -171,6 +171,7 @@ public class VoskActivity extends Activity implements
                 findViewById(R.id.recognize_file).setEnabled(true);
                 findViewById(R.id.recognize_mic).setEnabled(true);
                 findViewById(R.id.pause).setEnabled((false));
+                ((ToggleButton) findViewById(R.id.pause)).setChecked(false);
                 break;
             case STATE_FILE:
                 ((Button) findViewById(R.id.recognize_file)).setText(R.string.stop_file);
