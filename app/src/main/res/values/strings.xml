@@ -8,7 +8,6 @@
     <string name="preparing">Preparing the recognizer\n</string>
     <string name="ready">Ready\n</string>
     <string name="failed">Failed to init recognizer %s\n</string>
-    <string name="elapsed">Result %s elapsed %d milliseconds\n</string>
     <string name="starting">Starting\n</string>
     <string name="say_something">Say something\n</string>
     <string name="stop_file">Stop File</string>

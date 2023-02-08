@@ -6,14 +6,15 @@ repositories {
 }
 
 android {
-    compileSdkVersion 31
+    namespace "org.vosk.demo"
+    compileSdkVersion 33
     defaultConfig {
         applicationId "org.vosk.demo"
         minSdkVersion 21
-        targetSdkVersion 31
+        targetSdkVersion 33
         versionCode 1
         versionName "1.1"
-        ndkVersion = "23.1.7779620"
+        ndkVersion = "25.2.9519653"
         ndk {
             abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86_64', 'x86'
         }
