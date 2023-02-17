@@ -8,6 +8,7 @@ buildscript {
         maven {
             url 'https://alphacephei.com/maven/'
         }
+        mavenLocal()
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:7.4.1'
@@ -22,5 +23,6 @@ allprojects {
         maven {
             url 'https://alphacephei.com/maven/'
         }
+        mavenLocal()
     }
 }
