@@ -55,6 +55,7 @@ public class VoskActivity extends Activity implements
     private SpeechService speechService;
     private SpeechStreamService speechStreamService;
     private TextView resultView;
+    private Recognizer rec;
 
     @Override
     public void onCreate(Bundle state) {
@@ -114,6 +115,8 @@ public class VoskActivity extends Activity implements
             speechService.stop();
             speechService.shutdown();
         }
+
+        closeRec();
 
         if (speechStreamService != null) {
             speechStreamService.stop();
@@ -204,10 +207,11 @@ public class VoskActivity extends Activity implements
             setUiState(STATE_DONE);
             speechStreamService.stop();
             speechStreamService = null;
+            closeRec();
         } else {
             setUiState(STATE_FILE);
             try {
-                Recognizer rec = new Recognizer(model, 16000.f, "[\"one zero zero zero one\", " +
+                rec = new Recognizer(model, 16000.f, "[\"one zero zero zero one\", " +
                         "\"oh zero one two three four five six seven eight nine\", \"[unk]\"]");
 
                 InputStream ais = getAssets().open(
@@ -227,10 +231,11 @@ public class VoskActivity extends Activity implements
             setUiState(STATE_DONE);
             speechService.stop();
             speechService = null;
+            closeRec();
         } else {
             setUiState(STATE_MIC);
             try {
-                Recognizer rec = new Recognizer(model, 16000.0f);
+                rec = new Recognizer(model, 16000.0f);
                 speechService = new SpeechService(rec, 16000.0f);
                 speechService.startListening(this);
             } catch (IOException e) {
@@ -239,6 +244,15 @@ public class VoskActivity extends Activity implements
         }
     }
 
+    /**
+     * Release the resources of the Recognizer object
+     */
+    private void closeRec(){
+        if (rec!=null) {
+            rec.close();
+            rec = null;
+        }
+    }
 
     private void pause(boolean checked) {
         if (speechService != null) {
