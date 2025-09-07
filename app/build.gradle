@@ -1,34 +1,43 @@
-apply plugin: 'com.android.application'
+plugins {
+    id 'com.android.application'
+}
 
 android {
     namespace "org.vosk.demo"
-    compileSdkVersion 33
+    compileSdk = 33
+
     defaultConfig {
         applicationId "org.vosk.demo"
-        minSdkVersion 21
-        targetSdkVersion 33
-        versionCode 1
-        versionName "1.1"
-        ndkVersion = "25.2.9519653"
+        minSdk = 21
+        targetSdk = 33
+        versionCode = 1
+        versionName = "1.1"
+
+        ndkVersion "25.2.9519653"
+
         ndk {
-            abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86_64', 'x86'
+            abiFilters += ["armeabi-v7a", "arm64-v8a", "x86_64", "x86"]
         }
     }
+
     buildTypes {
         release {
-            minifyEnabled true
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            minifyEnabled = true
+            proguardFiles(
+                    getDefaultProguardFile("proguard-android-optimize.txt"),
+                    "proguard-rules.pro"
+            )
         }
     }
+
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
     }
 }
 
 dependencies {
-    implementation 'androidx.appcompat:appcompat:1.3.1'
-    implementation 'net.java.dev.jna:jna:5.13.0@aar'
-    implementation 'com.alphacephei:vosk-android:0.3.47@aar'
-    implementation project(':models')
+    implementation "androidx.appcompat:appcompat:1.3.1"
+    implementation "com.alphacephei:vosk-android:0.3.47"
+    implementation project(":models")
 }
